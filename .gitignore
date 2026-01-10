@@ -1,0 +1,12 @@
+# .gitignore mẫu cho dự án Fraud Detection
+venv/
+__pycache__/
+*.csv
+*.zip
+*.tar.gz
+*.pkl
+*.model
+.env
+.ipynb_checkpoints/
+data/
+models/
