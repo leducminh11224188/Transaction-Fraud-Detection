@@ -1,4 +1,4 @@
-Hệ thống Phát hiện Gian lận Giao dịch Thời gian thực (Hybrid Model)
+### Hệ thống Phát hiện Gian lận Giao dịch Thời gian thực (Hybrid Model)
 1. Tổng quan dự án
 Dự án xây dựng hệ thống phát hiện gian lận giao dịch tài chính theo mô hình End-to-End. Hệ thống kết hợp sức mạnh của LightGBM (dữ liệu bảng) và Graph Neural Networks - GNN (dữ liệu đồ thị) để khai thác các mối quan hệ phức tạp giữa các thực thể như Người dùng (User), Thẻ (Card), và Cửa hàng (Merchant).
 
