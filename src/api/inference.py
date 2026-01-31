@@ -86,8 +86,8 @@ def predict(df: pd.DataFrame) -> pd.DataFrame:
 
     fraud_pred = (fraud_proba >= THRESHOLD).astype(int)
 
-    proba = float(fraud_proba)
-    pred = int(fraud_pred)
+    proba = float(fraud_proba[0])
+    pred = int(fraud_pred[0])
     return proba, pred
 
 
