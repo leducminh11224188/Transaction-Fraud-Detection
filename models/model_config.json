@@ -1,0 +1,21 @@
+{
+  "best_iteration": 2986,
+  "validation_auc": 0.9751026514902841,
+  "optimal_threshold": 0.21691339077940094,
+  "lgb_params": {
+    "objective": "binary",
+    "metric": "auc",
+    "boosting_type": "gbdt",
+    "learning_rate": 0.03,
+    "num_leaves": 64,
+    "max_depth": -1,
+    "min_data_in_leaf": 50,
+    "feature_fraction": 0.8,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 5,
+    "lambda_l1": 0.1,
+    "lambda_l2": 0.1,
+    "verbosity": -1,
+    "seed": 42
+  }
+}
