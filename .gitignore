@@ -9,4 +9,3 @@ __pycache__/
 .env
 .ipynb_checkpoints/
 data/
-models/
