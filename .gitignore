@@ -5,7 +5,6 @@ __pycache__/
 *.zip
 *.tar.gz
 *.pkl
-*.model
 .env
 .ipynb_checkpoints/
 data/
