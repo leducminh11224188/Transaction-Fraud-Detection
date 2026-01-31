@@ -1,8 +1,9 @@
 """
 Inference module for IEEE-CIS Fraud Detection
-- Load trained LightGBM model
+- Lazy load trained LightGBM model
 - Apply identical feature engineering
 - Predict fraud probability
+- CI safe & production ready
 """
 
 import os
@@ -14,10 +15,14 @@ import lightgbm as lgb
 
 from src.features import build_features
 
+
 # =========================
 # PATHS
 # =========================
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+
 MODEL_DIR = os.path.join(BASE_DIR, "models")
 
 MODEL_PATH = os.path.join(MODEL_DIR, "fraud_lgb_model.txt")
@@ -25,35 +30,57 @@ FREQ_MAP_PATH = os.path.join(MODEL_DIR, "freq_maps.joblib")
 FEATURE_NAME_PATH = os.path.join(MODEL_DIR, "feature_names.json")
 MODEL_CONFIG_PATH = os.path.join(MODEL_DIR, "model_config.json")
 
+
 # =========================
-# LOAD ARTIFACTS (ONCE)
+# GLOBAL ARTIFACT HOLDERS (LAZY LOAD)
 # =========================
 model = None
+freq_maps = None
+FEATURE_NAMES = None
+model_config = None
 
-def load_model():
-    global model
+
+# =========================
+# LAZY LOAD FUNCTION
+# =========================
+def load_artifacts():
+    """
+    Load model & preprocessing artifacts only once.
+    Safe for CI & testing (no loading at import time).
+    """
+    global model, freq_maps, FEATURE_NAMES, model_config
+
     if model is None:
         print("📦 Loading inference artifacts...")
+
+        if not os.path.exists(MODEL_PATH):
+            raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
+
         model = lgb.Booster(model_file=MODEL_PATH)
-    return model
 
-freq_maps = joblib.load(FREQ_MAP_PATH)
+        if not os.path.exists(FREQ_MAP_PATH):
+            raise FileNotFoundError(f"Freq map not found: {FREQ_MAP_PATH}")
+        freq_maps = joblib.load(FREQ_MAP_PATH)
 
-with open(FEATURE_NAME_PATH, "r") as f:
-    FEATURE_NAMES = json.load(f)
+        if not os.path.exists(FEATURE_NAME_PATH):
+            raise FileNotFoundError(f"Feature names not found: {FEATURE_NAME_PATH}")
+        with open(FEATURE_NAME_PATH, "r") as f:
+            FEATURE_NAMES = json.load(f)
 
-with open(MODEL_CONFIG_PATH, "r") as f:
-    model_config = json.load(f)
+        if not os.path.exists(MODEL_CONFIG_PATH):
+            raise FileNotFoundError(f"Model config not found: {MODEL_CONFIG_PATH}")
+        with open(MODEL_CONFIG_PATH, "r") as f:
+            model_config = json.load(f)
 
-THRESHOLD = model_config.get("optimal_threshold", 0.5)
+        print("✅ Model & artifacts loaded successfully")
 
-print("✅ Model & artifacts loaded successfully")
+    return model, freq_maps, FEATURE_NAMES, model_config
 
 
 # =========================
 # CORE PREDICT FUNCTION
 # =========================
-def predict(df: pd.DataFrame) -> pd.DataFrame:
+def predict(df: pd.DataFrame):
     """
     Run fraud inference on raw input dataframe
 
@@ -61,20 +88,23 @@ def predict(df: pd.DataFrame) -> pd.DataFrame:
         df (pd.DataFrame): raw transaction dataframe
 
     Returns:
-        pd.DataFrame with:
-            - fraud_proba
-            - fraud_pred
+        tuple:
+            - fraud_proba (float)
+            - fraud_pred (int)
     """
 
-    model = load_model()
+    model, freq_maps, FEATURE_NAMES, model_config = load_artifacts()
+    THRESHOLD = model_config.get("optimal_threshold", 0.5)
 
     # -------------------------
     # Feature engineering
     # -------------------------
-    df_feat, _ = build_features(df.copy(),
-                                freq_maps=freq_maps,
-                                feature_names=FEATURE_NAMES,
-                                is_train=False)
+    df_feat, _ = build_features(
+        df.copy(),
+        freq_maps=freq_maps,
+        feature_names=FEATURE_NAMES,
+        is_train=False,
+    )
 
     # -------------------------
     # Prediction
@@ -84,12 +114,14 @@ def predict(df: pd.DataFrame) -> pd.DataFrame:
         num_iteration=model.best_iteration
     )
 
+    fraud_proba = np.asarray(fraud_proba).flatten()
     fraud_pred = (fraud_proba >= THRESHOLD).astype(int)
 
+    # Ensure scalar output
     proba = float(fraud_proba[0])
     pred = int(fraud_pred[0])
-    return proba, pred
 
+    return proba, pred
 
 
 # =========================
@@ -98,10 +130,10 @@ def predict(df: pd.DataFrame) -> pd.DataFrame:
 if __name__ == "__main__":
     print("🧪 Running local inference test")
 
-    # Dummy example (replace with real transaction row)
     sample = pd.DataFrame([{
         "TransactionAmt": 100.0,
         "ProductCD": "W",
+        "TransactionDT": 86400,
         "card1": 13926,
         "card2": 361.0,
         "addr1": 315.0,
@@ -109,5 +141,7 @@ if __name__ == "__main__":
         "R_emaildomain": "gmail.com"
     }])
 
-    output = predict(sample)
-    print(output)
+    proba, pred = predict(sample)
+
+    print("Fraud probability:", proba)
+    print("Fraud prediction:", pred)
