@@ -28,9 +28,15 @@ MODEL_CONFIG_PATH = os.path.join(MODEL_DIR, "model_config.json")
 # =========================
 # LOAD ARTIFACTS (ONCE)
 # =========================
-print("📦 Loading inference artifacts...")
+model = None
 
-model = lgb.Booster(model_file=MODEL_PATH)
+def load_model():
+    global model
+    if model is None:
+        print("📦 Loading inference artifacts...")
+        model = lgb.Booster(model_file=MODEL_PATH)
+    return model
+
 freq_maps = joblib.load(FREQ_MAP_PATH)
 
 with open(FEATURE_NAME_PATH, "r") as f:
@@ -59,6 +65,8 @@ def predict(df: pd.DataFrame) -> pd.DataFrame:
             - fraud_proba
             - fraud_pred
     """
+
+    model = load_model()
 
     # -------------------------
     # Feature engineering
