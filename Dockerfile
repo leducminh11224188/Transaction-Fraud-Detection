@@ -37,9 +37,10 @@ ENV PYTHONUNBUFFERED=1
 # ===============================
 # Expose port
 # ===============================
-EXPOSE 8000
+# EXPOSE 8000
 
 # ===============================
 # Run FastAPI with Uvicorn
 # ===============================
-CMD ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn src.api.app:app --host 0.0.0.0 --port $PORT"]
+
