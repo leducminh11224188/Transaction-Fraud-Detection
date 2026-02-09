@@ -1,82 +1,185 @@
-### Hệ thống Phát hiện Gian lận Giao dịch Thời gian thực (Hybrid Model)
-1. Tổng quan dự án
-Dự án xây dựng hệ thống phát hiện gian lận giao dịch tài chính theo mô hình End-to-End. Hệ thống kết hợp sức mạnh của LightGBM (dữ liệu bảng) và Graph Neural Networks - GNN (dữ liệu đồ thị) để khai thác các mối quan hệ phức tạp giữa các thực thể như Người dùng (User), Thẻ (Card), và Cửa hàng (Merchant).
+# Transaction Fraud Detection System / Hệ thống Phát hiện Gian lận Giao dịch
 
-Điểm nổi bật của dự án:
+[English](#english) | [Tiếng Việt](#tiếng-việt)
 
-Xoay quanh kiến trúc Streaming thay vì xử lý Batch truyền thống.
+---
 
-Sử dụng Feature Store (Redis) để tính toán đặc trưng thời gian thực.
+<a name="english"></a>
+## 🇬🇧 English
 
-Áp dụng Hybrid Model để tăng độ chính xác và giảm tỷ lệ báo động giả (False Positives).
+### 1. Overview
+This project implements a robust fraud detection system based on the IEEE-CIS Fraud Detection dataset. It leverages a **LightGBM** model for high-performance tabular data classification and provides a **FastAPI** service for real-time inference.
 
-2. Kiến trúc hệ thống
-Hệ thống bao gồm các thành phần chính:
+The goal is to identify fraudulent transactions accurately while maintaining low latency for real-time applications.
 
-Data Simulator: Script mô phỏng luồng giao dịch liên tục từ tập dữ liệu (PaySim/IEEE-CIS).
+### 2. Key Features
+- **Data Pipeline**: Analysis, preprocessing, and standardizing of transaction data (IEEE-CIS).
+- **Feature Engineering**: Custom logic to extracting meaningful patterns from transaction history (`src/features.py`).
+- **Model**: LightGBM Classifier, optimized for memory efficiency and speed (`src/train.py`).
+- **Real-time API**: REST Endpoint built with FastAPI to serve predictions (`src/api/`).
+- **Monitoring**: Integration with Prometheus for tracking API usage and performance.
+- **Docker Support**: Containerized environment for reproducible deployment.
 
-API Service (FastAPI): Tiếp nhận yêu cầu, điều phối dữ liệu và trả về kết quả dự đoán.
+### 3. Project Structure
+The project is organized as follows:
+```text
+├── config/              # Configuration files
+├── data/                # Data storage (IEEE-CIS dataset)
+│   └── IEEE-CIS/
+├── models/              # Saved models and artifacts (LightGBM model, feature maps)
+├── notebooks/           # Jupyter notebooks for Exploratory Data Analysis (EDA)
+├── src/                 # Source code
+│   ├── api/             # FastAPI application and schemas
+│   ├── simulator/       # Transaction simulation modules
+│   ├── utils/           # Utility functions (logging, etc.)
+│   ├── features.py      # Feature engineering logic
+│   ├── preprocessing.py # Data cleaning and transformation
+│   └── train.py         # Model training pipeline
+├── tests/               # Unit tests
+├── Dockerfile           # Docker image configuration
+└── requirements.txt     # Python project dependencies
+```
 
-Feature Store (Redis): Lưu trữ và cập nhật các đặc trưng cửa sổ thời gian (Window features).
+### 4. Setup & Installation
 
-Graph Engine: Trích xuất các đặc trưng quan hệ (Embeddings) từ đồ thị giao dịch.
+#### Prerequisites
+- Python 3.9+
+- Docker (optional)
 
-Inference Engine: Mô hình Hybrid thực hiện dự đoán thời gian thực với độ trễ thấp.
+#### 1. Clone the repository
+```bash
+git clone <repo-url>
+cd "Transaction Fraud Detection"
+```
 
-3. Danh mục công nghệ
-Ngôn ngữ: Python 3.9+
-
-Học máy: LightGBM, DGL (Deep Graph Library) hoặc PyTorch Geometric.
-
-Backend: FastAPI, Uvicorn.
-
-Cơ sở dữ liệu: Redis (Feature Store), PostgreSQL (Transaction Logs).
-
-DevOps: Docker, Docker Compose.
-
-4. Cấu trúc thư mục
-Plaintext
-
-.
-├── data/                   # Thư mục chứa dữ liệu (đã được cấu hình gitignore)
-├── notebooks/              # Phân tích dữ liệu (EDA) và thử nghiệm mô hình
-├── src/
-│   ├── api/                # Code xử lý FastAPI và các Endpoints
-│   ├── features/           # Logic tính toán Window & Graph features
-│   ├── models/             # Cấu trúc mô hình Hybrid và luồng huấn luyện
-│   ├── simulator/          # Script giả lập luồng dữ liệu streaming
-│   └── utils/              # Các hàm hỗ trợ (Kết nối DB, Logging)
-├── docker-compose.yml      # Cấu hình triển khai hệ thống bằng Docker
-├── requirements.txt        # Danh sách thư viện cần thiết
-└── README.md
-5. Hướng dẫn cài đặt và Triển khai
-1. Sao chép dự án (Clone)
-Bash
-
-git clone https://github.com/yourusername/fraud-detection-e2e.git
-cd fraud-detection-e2e
-2. Thiết lập môi trường
-Khuyến khích sử dụng Docker để triển khai nhanh chóng và đồng nhất:
-
-Bash
-
-docker-compose up --build
-Hoặc cài đặt thủ công trên môi trường ảo (venv):
-
-Bash
-
+#### 2. Install Dependencies
+It is recommended to use a virtual environment.
+```bash
 pip install -r requirements.txt
-3. Chạy trình giả lập dữ liệu
-Sau khi API đã khởi động thành công, chạy script sau để bắt đầu mô phỏng luồng giao dịch:
+```
 
-Bash
+#### 3. Data Preparation
+Download the IEEE-CIS Fraud Detection dataset and place it in the `data/IEEE-CIS/` directory. The required files are:
+- `train_transaction.csv`
+- `train_identity.csv`
+- `test_transaction.csv`
+- `test_identity.csv`
 
-python src/simulator/stream_data.py
-6. Tiêu chí đánh giá
-Do đặc thù dữ liệu gian lận mất cân bằng nghiêm trọng, dự án tập trung tối ưu hóa:
+### 5. Usage
 
-Precision-Recall AUC (PR-AUC): Thay vì chỉ dùng Accuracy.
+#### Training the Model
+To execute the training pipeline (load data, process features, train LightGBM), run:
+```bash
+python src/train.py
+```
+*Artifacts (model files, feature names) will be saved to the `models/` directory.*
 
-F1-Score: Cân bằng giữa việc bắt đúng gian lận và hạn chế chặn nhầm khách hàng.
+#### Running the API Server
+Start the FastAPI application:
+```bash
+uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
+```
+- **API Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Health Check**: [http://localhost:8000/health](http://localhost:8000/health)
 
-Inference Latency: Mục tiêu xử lý dưới 200ms cho mỗi giao dịch.
+### 6. Docker Deployment
+You can build and run the entire application using Docker.
+
+```bash
+# Build the image
+docker build -t fraud-detection .
+
+# Run the container
+docker run -p 8000:8000 fraud-detection
+```
+
+---
+
+<a name="tiếng-việt"></a>
+## 🇻🇳 Tiếng Việt
+
+### 1. Tổng quan
+Dự án này xây dựng một hệ thống phát hiện gian lận giao dịch dựa trên bộ dữ liệu IEEE-CIS Fraud Detection. Hệ thống sử dụng mô hình **LightGBM** để phân loại với hiệu năng cao và cung cấp dịch vụ **FastAPI** cho việc dự đoán thời gian thực.
+
+Mục tiêu là phát hiện chính xác các giao dịch gian lận trong khi vẫn đảm bảo độ trễ thấp cho các ứng dụng thực tế.
+
+### 2. Tính năng chính
+- **Xử lý dữ liệu**: Phân tích, tiền xử lý và chuẩn hóa dữ liệu giao dịch (IEEE-CIS).
+- **Kỹ thuật đặc trưng (Feature Engineering)**: Logic tùy chỉnh để trích xuất các mẫu quan trọng từ lịch sử giao dịch (`src/features.py`).
+- **Mô hình**: LightGBM Classifier, được tối ưu hóa về tốc độ và bộ nhớ (`src/train.py`).
+- **API thời gian thực**: REST Endpoint được xây dựng với FastAPI để phục vụ dự đoán (`src/api/`).
+- **Giám sát**: Tích hợp Prometheus để theo dõi hiệu suất và lưu lượng API.
+- **Hỗ trợ Docker**: Môi trường container hóa giúp triển khai dễ dàng và đồng nhất.
+
+### 3. Cấu trúc dự án
+Cấu trúc thư mục của dự án như sau:
+```text
+├── config/              # Các file cấu hình
+├── data/                # Nơi lưu trữ dữ liệu (IEEE-CIS dataset)
+│   └── IEEE-CIS/
+├── models/              # Nơi lưu model đã huấn luyện và các artifact
+├── notebooks/           # Jupyter notebooks phân tích dữ liệu (EDA)
+├── src/                 # Mã nguồn chính
+│   ├── api/             # Ứng dụng FastAPI và schemas
+│   ├── simulator/       # Module giả lập giao dịch
+│   ├── utils/           # Các hàm tiện ích (logging, v.v.)
+│   ├── features.py      # Logic tính toán đặc trưng (Feature Engineering)
+│   ├── preprocessing.py # Làm sạch và chuyển đổi dữ liệu
+│   └── train.py         # Quy trình huấn luyện mô hình
+├── tests/               # Unit tests
+├── Dockerfile           # Cấu hình Docker image
+└── requirements.txt     # Danh sách các thư viện Python cần thiết
+```
+
+### 4. Cài đặt
+
+#### Yêu cầu hệ thống
+- Python 3.9 trở lên
+- Docker (tùy chọn)
+
+#### 1. Tải dự án
+```bash
+git clone <repo-url>
+cd "Transaction Fraud Detection"
+```
+
+#### 2. Cài đặt thư viện
+Khuyên dùng môi trường ảo (virtual environment).
+```bash
+pip install -r requirements.txt
+```
+
+#### 3. Chuẩn bị dữ liệu
+Tải bộ dữ liệu IEEE-CIS Fraud Detection và đặt vào thư mục `data/IEEE-CIS/`. Các file cần thiết bao gồm:
+- `train_transaction.csv`
+- `train_identity.csv`
+- `test_transaction.csv`
+- `test_identity.csv`
+
+### 5. Hướng dẫn sử dụng
+
+#### Huấn luyện mô hình
+Để chạy quy trình huấn luyện (tải dữ liệu, xử lý đặc trưng, train LightGBM), chạy lệnh:
+```bash
+python src/train.py
+```
+*Các file model và danh sách đặc trưng sẽ được lưu vào thư mục `models/`.*
+
+#### Chạy API Server
+Khởi động ứng dụng FastAPI:
+```bash
+uvicorn src.api.app:app --host 0.0.0.0 --port 8000 --reload
+```
+- **Tài liệu API**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **Kiểm tra trạng thái (Health Check)**: [http://localhost:8000/health](http://localhost:8000/health)
+
+### 6. Triển khai với Docker
+Bạn có thể xây dựng và chạy toàn bộ ứng dụng bằng Docker.
+
+```bash
+# Xây dựng image
+docker build -t fraud-detection .
+
+# Chạy container
+docker run -p 8000:8000 fraud-detection
+```
